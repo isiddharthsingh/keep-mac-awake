@@ -15,12 +15,17 @@ cd "$ROOT"
 ./scripts/build-app.sh
 BUILD_NUMBER="$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" build/MacAwake.app/Contents/Info.plist)"
 
-# Disk image with a drag-to-Applications shortcut
-STAGE="$(mktemp -d)"
-ditto build/MacAwake.app "$STAGE/MacAwake.app"
-ln -s /Applications "$STAGE/Applications"
-hdiutil create -quiet -volname MacAwake -srcfolder "$STAGE" -ov -format UDZO build/MacAwake.dmg
-rm -rf "$STAGE"
+# Disk image: the app on the left, an Applications shortcut on the right, over assets/dmg-background.png.
+# dmgbuild runs from a private virtualenv so the system Python stays untouched.
+DMGBUILD_VENV=.build/dmgbuild-venv
+if [ ! -x "$DMGBUILD_VENV/bin/dmgbuild" ]; then
+    python3 -m venv "$DMGBUILD_VENV"
+    "$DMGBUILD_VENV/bin/pip" install --quiet "dmgbuild==1.6.7"
+fi
+rm -f build/MacAwake.dmg
+"$DMGBUILD_VENV/bin/dmgbuild" -s scripts/dmg_settings.py \
+    -D app=build/MacAwake.app -D background=assets/dmg-background.png \
+    MacAwake build/MacAwake.dmg
 
 SIGN_UPDATE=.build/artifacts/sparkle/Sparkle/bin/sign_update
 if [ -n "${SPARKLE_PRIVATE_KEY:-}" ]; then
