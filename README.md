@@ -4,6 +4,12 @@
 
 It is a simple alternative to the `caffeinate` terminal command and to apps like Amphetamine, KeepingYouAwake, and Caffeine. Use it to keep a MacBook awake during long downloads, builds, presentations, or while Claude Code and other AI coding agents work overnight.
 
+## Download
+
+**[Download MacAwake.dmg](https://github.com/isiddharthsingh/keep-mac-awake/releases/latest/download/MacAwake.dmg)** (always the latest version). Open the DMG and drag MacAwake into Applications.
+
+MacAwake is not notarized by Apple yet, so the first time you open it macOS says it cannot verify the app. Click **Done**, open **System Settings → Privacy & Security**, click **Open Anyway** next to MacAwake, and confirm. You only need to do this once; updates installed from inside the app skip this step.
+
 ## Features
 
 - **One-click presets:** 15 min, 30 min, 1 hour, 2 hours, 4 hours, or Until I stop.
@@ -11,6 +17,7 @@ It is a simple alternative to the `caffeinate` terminal command and to apps like
 - **Live countdown in the menu bar:** an empty mug means your Mac sleeps normally; a steaming cup shows the time left (for example `1:42`).
 - **Keep screen on, or let it turn off:** with the switch off, the display can sleep while the Mac, network, and apps keep running.
 - **Ends on its own:** sleep is allowed again the moment the timer runs out, or if the app quits or crashes.
+- **Built-in updates:** checks for new versions daily, or click **Check for Updates…** in the panel.
 - **No Dock icon, no account, no tracking.** Native Swift and SwiftUI with a Liquid Glass panel, light and dark mode.
 
 ## Requirements
@@ -18,7 +25,7 @@ It is a simple alternative to the `caffeinate` terminal command and to apps like
 - macOS 26 (Tahoe) or later
 - To build from source: Xcode 26 or later (Swift 6.2+)
 
-## Install (build from source)
+## Build from source
 
 ```bash
 git clone https://github.com/isiddharthsingh/keep-mac-awake.git
@@ -65,6 +72,10 @@ They use the same macOS mechanism: IOKit power assertions. **Keep screen on** ma
 
 Yes, for the most common case: keeping your Mac awake for a set time from the menu bar. Amphetamine offers more triggers (apps, downloads, schedules) and lid-closed sessions; MacAwake stays small, native, and open source.
 
+### How do I update MacAwake?
+
+MacAwake updates itself. It checks for a new release once a day and asks before installing, or you can click **Check for Updates…** in the panel. Every update is signed, and MacAwake refuses to install one whose signature does not match.
+
 ### What happens if MacAwake quits or crashes?
 
 macOS releases its sleep assertions automatically, so your Mac returns to normal sleep. It can never get stuck awake.
@@ -93,6 +104,17 @@ swift test               # run the test suite
 - `src/AwakeCore`: session logic, duration formatting, and the IOKit power assertion wrapper
 - `src/Awake`: the menu bar icon and the glass dropdown panel
 - `tests/AwakeCoreTests`: tests, including one that checks the real assertions macOS reports
+
+### Releasing
+
+Push a version tag. GitHub Actions runs the tests, builds `MacAwake.dmg`, signs it for [Sparkle](https://sparkle-project.org) updates, and publishes it with `appcast.xml` as a GitHub release:
+
+```bash
+git tag v1.1.0
+git push origin v1.1.0
+```
+
+The workflow needs the `SPARKLE_PRIVATE_KEY` repository secret (the private EdDSA key from Sparkle's `generate_keys`).
 
 ## License
 
