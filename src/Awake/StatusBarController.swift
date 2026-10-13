@@ -9,14 +9,17 @@ final class StatusBarController: NSObject {
     private let session: KeepAwakeSession
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let panel = GlassPanel(cornerRadius: 18)
+    private let sessionKeeper: UpdateSessionKeeper
     /// Checks the appcast daily (SUFeedURL in Info.plist) and on "Check for Updates…".
-    private let updater = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+    private let updater: SPUStandardUpdaterController
     private var panelSize = CGSize.zero
     private var isPanelOpen = false
     private var clickMonitor: Any?
 
-    init(session: KeepAwakeSession) {
+    init(session: KeepAwakeSession, pendingSessions: PendingSessionStore) {
         self.session = session
+        sessionKeeper = UpdateSessionKeeper(session: session, store: pendingSessions)
+        updater = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: sessionKeeper, userDriverDelegate: nil)
         super.init()
         if let button = statusItem.button {
             button.target = self
