@@ -21,9 +21,20 @@ BIN_DIR="$(swift build -c release --show-bin-path)"
 
 APP="$ROOT/build/$APP_NAME.app"
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/Resources"
 cp "$BIN_DIR/Awake" "$APP/Contents/MacOS/$APP_NAME"
 ditto "$BIN_DIR/Sparkle.framework" "$APP/Contents/Frameworks/Sparkle.framework"
+
+# App icon: assets/AppIcon.png (1024px) -> AppIcon.icns with every size macOS asks for
+ICON_TMP="$(mktemp -d)"
+ICONSET="$ICON_TMP/AppIcon.iconset"
+mkdir -p "$ICONSET"
+for size in 16 32 128 256 512; do
+    sips -z "$size" "$size" assets/AppIcon.png --out "$ICONSET/icon_${size}x${size}.png" >/dev/null
+    sips -z "$((size * 2))" "$((size * 2))" assets/AppIcon.png --out "$ICONSET/icon_${size}x${size}@2x.png" >/dev/null
+done
+iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
+rm -rf "$ICON_TMP"
 
 cat > "$APP/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -34,6 +45,7 @@ cat > "$APP/Contents/Info.plist" <<EOF
     <key>CFBundleDisplayName</key><string>$APP_NAME</string>
     <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
     <key>CFBundleExecutable</key><string>$APP_NAME</string>
+    <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>$VERSION</string>
     <key>CFBundleVersion</key><string>$BUILD_NUMBER</string>

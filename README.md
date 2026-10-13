@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/AppIcon.png" width="128" height="128" alt="MacAwake app icon: a countdown timer ring around a coffee cup"></p>
+
 # MacAwake: Keep Your Mac Awake from the Menu Bar
 
 **MacAwake is a free, open-source macOS menu bar app that keeps your Mac awake for as long as you choose: 15 minutes, a few hours, a custom time, or until you stop it.** When the timer ends, your Mac goes back to its normal sleep settings on its own.
