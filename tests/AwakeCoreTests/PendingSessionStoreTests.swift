@@ -45,4 +45,37 @@ struct PendingSessionStoreTests {
 
         #expect(store.take() == forever)
     }
+
+    @Test func takeIgnoresSessionSavedLongAgo() {
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var now = Date(timeIntervalSinceReferenceDate: 5000)
+        let store = PendingSessionStore(defaults: defaults, clock: { now })
+
+        store.save(snapshot)
+        now += 6 * 60  // e.g. the Mac shut down mid-update and the app only opens at the next login
+
+        #expect(store.take() == nil)
+    }
+
+    @Test func takeAcceptsSessionSavedRightBeforeRelaunch() {
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var now = Date(timeIntervalSinceReferenceDate: 5000)
+        let store = PendingSessionStore(defaults: defaults, clock: { now })
+
+        store.save(snapshot)
+        now += 30
+
+        #expect(store.take() == snapshot)
+    }
+
+    @Test func takeAcceptsSessionSavedByVersion104() {
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        // 1.0.4 saved the bare snapshot with no timestamp, right before relaunching into the update.
+        defaults.set(try! JSONEncoder().encode(snapshot), forKey: "pendingSession")
+
+        #expect(PendingSessionStore(defaults: defaults).take() == snapshot)
+    }
 }
