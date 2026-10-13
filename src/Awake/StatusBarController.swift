@@ -8,6 +8,7 @@ import SwiftUI
 final class StatusBarController: NSObject {
     private let session: KeepAwakeSession
     private let preferences: Preferences
+    private let loginItem = LoginItem()
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let panel = GlassPanel(cornerRadius: 18)
     private let sessionKeeper: UpdateSessionKeeper
@@ -32,7 +33,7 @@ final class StatusBarController: NSObject {
         panel.onCancel = { [weak self] in self?.closePanel() }
         panel.setContent(
             PanelView(
-                session: session, hasBattery: hasBattery,
+                session: session, loginItem: loginItem, hasBattery: hasBattery,
                 onCheckForUpdates: { [weak self] in self?.checkForUpdates() })
                 .fixedSize()
                 .onGeometryChange(for: CGSize.self, of: { $0.size }) { [weak self] size in
@@ -83,6 +84,7 @@ final class StatusBarController: NSObject {
 
     private func openPanel() {
         isPanelOpen = true  // set first, so a size SwiftUI reports while the panel is opening still applies
+        loginItem.refresh()
         if panelSize == .zero { panel.layoutContentIfNeeded() }  // reports the size through onGeometryChange
         positionPanel()
         panel.makeKeyAndOrderFront(nil)

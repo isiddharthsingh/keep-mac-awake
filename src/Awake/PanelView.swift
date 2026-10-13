@@ -21,6 +21,7 @@ private let batteryFloors = [10, 20, 30, 50]
 /// The panel that drops down from the menu bar icon.
 struct PanelView: View {
     @Bindable var session: KeepAwakeSession
+    let loginItem: LoginItem
     /// Desktop Macs have no battery, so they get no battery setting.
     let hasBattery: Bool
     let onCheckForUpdates: () -> Void
@@ -38,15 +39,9 @@ struct PanelView: View {
             customRow
             Divider().padding(.vertical, 14)
             VStack(spacing: 10) {
-                HStack {
-                    Text("Keep screen on")
-                    Spacer()
-                    Toggle("Keep screen on", isOn: $session.keepScreenOn)
-                        .toggleStyle(.switch)
-                        .labelsHidden()
-                        .controlSize(.small)
-                }
+                switchRow("Keep screen on", isOn: $session.keepScreenOn)
                 if hasBattery { batteryFloorRow }
+                switchRow("Open at login", isOn: Binding(get: { loginItem.isEnabled }, set: { loginItem.setEnabled($0) }))
             }
             Divider().padding(.vertical, 14)
             VStack(spacing: 2) {
@@ -134,6 +129,17 @@ struct PanelView: View {
             .buttonStyle(PanelButtonStyle(kind: .accent))
             .disabled(isEmpty)
             .opacity(isEmpty ? 0.4 : 1)
+        }
+    }
+
+    private func switchRow(_ title: String, isOn: Binding<Bool>) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Toggle(title, isOn: isOn)
+                .toggleStyle(.switch)
+                .labelsHidden()
+                .controlSize(.small)
         }
     }
 
