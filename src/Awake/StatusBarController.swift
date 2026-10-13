@@ -28,8 +28,9 @@ final class StatusBarController: NSObject {
             PanelView(session: session, onCheckForUpdates: { [weak self] in self?.checkForUpdates() })
                 .fixedSize()
                 .onGeometryChange(for: CGSize.self, of: { $0.size }) { [weak self] size in
-                    self?.panelSize = size
-                    self?.positionPanel()
+                    guard let self else { return }
+                    panelSize = size
+                    if panel.isVisible { positionPanel() }
                 }
         )
         updateButton()
@@ -59,7 +60,7 @@ final class StatusBarController: NSObject {
     }
 
     private func openPanel() {
-        if panelSize == .zero { panelSize = panel.contentFittingSize }
+        if panelSize == .zero { panel.layoutContentIfNeeded() }  // reports the size through onGeometryChange
         positionPanel()
         panel.makeKeyAndOrderFront(nil)
         statusItem.button?.highlight(true)
@@ -122,11 +123,15 @@ final class GlassPanel: NSPanel {
         contentView = clip
     }
 
-    var contentFittingSize: CGSize { glass.contentView?.fittingSize ?? .zero }
+    /// Lays out the SwiftUI content now, so its size is known before the panel is first shown.
+    func layoutContentIfNeeded() { glass.contentView?.layoutSubtreeIfNeeded() }
 
     func setContent(_ view: some View) {
         let host = NSHostingView(rootView: view)
-        host.sizingOptions = [.intrinsicContentSize]
+        // StatusBarController sizes the window from SwiftUI's measured size. If the hosting view also
+        // published size constraints, AppKit's layout pass would resize the window too, at a different
+        // moment, and the window and its content could end up a whole state change apart.
+        host.sizingOptions = []
         host.frame = glass.bounds
         host.autoresizingMask = [.width, .height]
         glass.contentView = host
