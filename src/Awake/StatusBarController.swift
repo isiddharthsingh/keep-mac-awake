@@ -12,6 +12,7 @@ final class StatusBarController: NSObject {
     /// Checks the appcast daily (SUFeedURL in Info.plist) and on "Check for Updates…".
     private let updater = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
     private var panelSize = CGSize.zero
+    private var isPanelOpen = false
     private var clickMonitor: Any?
 
     init(session: KeepAwakeSession) {
@@ -30,7 +31,10 @@ final class StatusBarController: NSObject {
                 .onGeometryChange(for: CGSize.self, of: { $0.size }) { [weak self] size in
                     guard let self else { return }
                     panelSize = size
-                    if panel.isVisible { positionPanel() }
+                    // This runs inside SwiftUI's update. Resizing the window from here makes AppKit apply the
+                    // height change to the glass view twice, leaving the content shifted off the top edge.
+                    // Resize on the next main-actor turn instead, once SwiftUI has finished.
+                    if isPanelOpen { Task { @MainActor [weak self] in self?.positionPanel() } }
                 }
         )
         updateButton()
@@ -60,6 +64,7 @@ final class StatusBarController: NSObject {
     }
 
     private func openPanel() {
+        isPanelOpen = true  // set first, so a size SwiftUI reports while the panel is opening still applies
         if panelSize == .zero { panel.layoutContentIfNeeded() }  // reports the size through onGeometryChange
         positionPanel()
         panel.makeKeyAndOrderFront(nil)
@@ -78,6 +83,7 @@ final class StatusBarController: NSObject {
     }
 
     private func closePanel() {
+        isPanelOpen = false
         panel.orderOut(nil)
         statusItem.button?.highlight(false)
         if let clickMonitor { NSEvent.removeMonitor(clickMonitor) }
