@@ -93,3 +93,7 @@ swift test               # run the test suite
 - `src/AwakeCore`: session logic, duration formatting, and the IOKit power assertion wrapper
 - `src/Awake`: the menu bar icon and the glass dropdown panel
 - `tests/AwakeCoreTests`: tests, including one that checks the real assertions macOS reports
+
+## License
+
+MacAwake is released under the [MIT License](LICENSE).
