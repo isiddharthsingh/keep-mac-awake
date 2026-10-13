@@ -1,0 +1,32 @@
+name: Release
+
+# Push a tag like v1.2.0 to publish MacAwake.dmg and the Sparkle appcast as a GitHub release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the build number is the commit count
+
+      - name: Test
+        run: swift test
+
+      - name: Build DMG and appcast
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: VERSION="${GITHUB_REF_NAME#v}" ./scripts/make-release.sh
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" build/MacAwake.dmg build/appcast.xml \
+            --title "MacAwake ${GITHUB_REF_NAME#v}" --generate-notes
