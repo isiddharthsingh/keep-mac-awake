@@ -7,6 +7,7 @@ import SwiftUI
 @MainActor
 final class StatusBarController: NSObject {
     private let session: KeepAwakeSession
+    private let preferences: Preferences
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let panel = GlassPanel(cornerRadius: 18)
     private let sessionKeeper: UpdateSessionKeeper
@@ -16,8 +17,9 @@ final class StatusBarController: NSObject {
     private var isPanelOpen = false
     private var clickMonitor: Any?
 
-    init(session: KeepAwakeSession, pendingSessions: PendingSessionStore, hasBattery: Bool) {
+    init(session: KeepAwakeSession, pendingSessions: PendingSessionStore, preferences: Preferences, hasBattery: Bool) {
         self.session = session
+        self.preferences = preferences
         sessionKeeper = UpdateSessionKeeper(session: session, store: pendingSessions)
         updater = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: sessionKeeper, userDriverDelegate: nil)
         super.init()
@@ -43,6 +45,7 @@ final class StatusBarController: NSObject {
                 }
         )
         updateButton()
+        savePreferences()
     }
 
     /// Empty mug when idle; steaming cup plus time left while keeping the Mac awake.
@@ -55,6 +58,16 @@ final class StatusBarController: NSObject {
             button.title = session.remaining.map { DurationFormat.menuBar($0) } ?? ""
         } onChange: { [weak self] in
             Task { @MainActor in self?.updateButton() }
+        }
+    }
+
+    /// Writes the panel's settings back each time one changes, so the next launch starts the same way.
+    private func savePreferences() {
+        withObservationTracking {
+            preferences.keepScreenOn = session.keepScreenOn
+            preferences.batteryFloor = session.batteryFloor
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.savePreferences() }
         }
     }
 

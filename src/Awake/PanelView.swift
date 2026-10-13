@@ -24,8 +24,8 @@ struct PanelView: View {
     /// Desktop Macs have no battery, so they get no battery setting.
     let hasBattery: Bool
     let onCheckForUpdates: () -> Void
-    @State private var customHours = 1
-    @State private var customMinutes = 30
+    @AppStorage("customHours") private var customHours = 1
+    @AppStorage("customMinutes") private var customMinutes = 30
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
