@@ -6,6 +6,8 @@
 
 It is a simple alternative to the `caffeinate` terminal command and to apps like Amphetamine, KeepingYouAwake, and Caffeine. Use it to keep a MacBook awake during long downloads, builds, presentations, or while Claude Code and other AI coding agents work overnight.
 
+<p align="center"><img src="assets/screenshot.png" width="800" alt="MacAwake menu bar app on macOS: the panel keeping a Mac awake with 1:42:57 left and the countdown in the menu bar (left), and the idle panel with timer presets (right)"></p>
+
 ## Download
 
 **[Download MacAwake.dmg](https://github.com/isiddharthsingh/keep-mac-awake/releases/latest/download/MacAwake.dmg)** (always the latest version). Open the DMG and drag MacAwake into Applications.
