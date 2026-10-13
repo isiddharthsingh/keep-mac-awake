@@ -100,6 +100,62 @@ struct KeepAwakeSessionTests {
         #expect(blocker.current == .systemAndDisplay)
     }
 
+    @Test func snapshotIsNilWhenIdle() {
+        #expect(session.snapshot == nil)
+    }
+
+    @Test func snapshotCapturesRunningSession() {
+        let started = clock.now
+        session.keepScreenOn = false
+        session.start(for: 7200)
+        clock.advance(60)
+
+        #expect(session.snapshot == SessionSnapshot(startDate: started, duration: 7200, keepScreenOn: false))
+    }
+
+    @Test func restoreResumesSessionThatHasNotEnded() {
+        let started = clock.now
+        clock.advance(1800)  // e.g. time spent installing an update
+
+        let resumed = session.restore(SessionSnapshot(startDate: started, duration: 7200, keepScreenOn: true))
+
+        #expect(resumed)
+        #expect(session.isActive)
+        #expect(session.endDate == started + 7200)
+        #expect(session.remaining == 5400)
+        #expect(blocker.current == .systemAndDisplay)
+    }
+
+    @Test func restoreIgnoresSessionThatAlreadyEnded() {
+        let started = clock.now
+        clock.advance(7200)
+
+        let resumed = session.restore(SessionSnapshot(startDate: started, duration: 7200, keepScreenOn: true))
+
+        #expect(!resumed)
+        #expect(!session.isActive)
+        #expect(blocker.modes.allSatisfy { $0 == .off })
+    }
+
+    @Test func restoreResumesUntilStoppedSession() {
+        let started = clock.now
+        clock.advance(5 * 3600)
+
+        let resumed = session.restore(SessionSnapshot(startDate: started, duration: nil, keepScreenOn: true))
+
+        #expect(resumed)
+        #expect(session.isActive)
+        #expect(session.endDate == nil)
+        #expect(session.startDate == started)
+    }
+
+    @Test func restoreKeepsScreenSetting() {
+        session.restore(SessionSnapshot(startDate: clock.now, duration: 600, keepScreenOn: false))
+
+        #expect(!session.keepScreenOn)
+        #expect(blocker.current == .system)
+    }
+
     @Test func startingAgainReplacesPreviousSession() {
         session.start(for: 600)
         clock.advance(300)

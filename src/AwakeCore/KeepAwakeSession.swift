@@ -1,6 +1,20 @@
 import Foundation
 import Observation
 
+/// What's needed to resume a session after the app relaunches, for example to install an update.
+public struct SessionSnapshot: Codable, Equatable, Sendable {
+    public var startDate: Date
+    /// nil means "until stopped".
+    public var duration: TimeInterval?
+    public var keepScreenOn: Bool
+
+    public init(startDate: Date, duration: TimeInterval?, keepScreenOn: Bool) {
+        self.startDate = startDate
+        self.duration = duration
+        self.keepScreenOn = keepScreenOn
+    }
+}
+
 /// One "keep the Mac awake" session: for a fixed duration, or until stopped.
 @MainActor
 @Observable
@@ -46,6 +60,27 @@ public final class KeepAwakeSession {
         isActive = true
         applyBlock()
         startTimer()
+    }
+
+    /// The running session, ready to save across a relaunch; nil when idle.
+    public var snapshot: SessionSnapshot? {
+        guard isActive, let startDate else { return nil }
+        return SessionSnapshot(startDate: startDate, duration: duration, keepScreenOn: keepScreenOn)
+    }
+
+    /// Resumes a session saved before a relaunch, keeping its original start so the countdown
+    /// includes the time the app was gone. Returns false, and stays idle, if its time already ran out.
+    @discardableResult
+    public func restore(_ snapshot: SessionSnapshot) -> Bool {
+        now = clock()
+        if let duration = snapshot.duration, snapshot.startDate + duration <= now { return false }
+        keepScreenOn = snapshot.keepScreenOn
+        startDate = snapshot.startDate
+        duration = snapshot.duration
+        isActive = true
+        applyBlock()
+        startTimer()
+        return true
     }
 
     public func stop() {
