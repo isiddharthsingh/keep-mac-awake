@@ -15,6 +15,12 @@ public struct SessionSnapshot: Codable, Equatable, Sendable {
     }
 }
 
+/// A session the battery floor ended, kept so the panel can say why the Mac is allowed to sleep again.
+public struct LowBatteryStop: Equatable, Sendable {
+    public var percent: Int
+    public var date: Date
+}
+
 /// One "keep the Mac awake" session: for a fixed duration, or until stopped.
 @MainActor
 @Observable
@@ -28,6 +34,10 @@ public final class KeepAwakeSession {
     public var keepScreenOn = true {
         didSet { applyBlock() }
     }
+    /// Battery charge, in percent, at which the session ends while on battery; nil means never.
+    public var batteryFloor: Int?
+    /// Set when the battery floor ended the last session; cleared when the next one starts.
+    public private(set) var lowBatteryStop: LowBatteryStop?
 
     public var endDate: Date? {
         guard isActive, let startDate, let duration else { return nil }
@@ -44,11 +54,13 @@ public final class KeepAwakeSession {
     }
 
     @ObservationIgnored private let blocker: SleepBlocker
+    @ObservationIgnored private let powerSource: PowerSource
     @ObservationIgnored private let clock: () -> Date
     @ObservationIgnored private var timer: Timer?
 
-    public init(blocker: SleepBlocker, clock: @escaping () -> Date = Date.init) {
+    public init(blocker: SleepBlocker, powerSource: PowerSource, clock: @escaping () -> Date = Date.init) {
         self.blocker = blocker
+        self.powerSource = powerSource
         self.clock = clock
         now = clock()
     }
@@ -58,6 +70,7 @@ public final class KeepAwakeSession {
         startDate = now
         self.duration = duration
         isActive = true
+        lowBatteryStop = nil
         applyBlock()
         startTimer()
     }
@@ -78,6 +91,7 @@ public final class KeepAwakeSession {
         startDate = snapshot.startDate
         duration = snapshot.duration
         isActive = true
+        lowBatteryStop = nil
         applyBlock()
         startTimer()
         return true
@@ -92,11 +106,17 @@ public final class KeepAwakeSession {
         applyBlock()
     }
 
-    /// Advances the countdown; ends the session once its time is up.
+    /// Advances the countdown; ends the session once its time is up or the battery reaches the floor.
     /// Uses wall-clock time, so it stays correct after the Mac wakes from a lid-close sleep.
     public func tick() {
         now = clock()
-        if let endDate, now >= endDate { stop() }
+        if let endDate, now >= endDate {
+            stop()
+        } else if isActive, let batteryFloor, let battery = powerSource.batteryStatus(),
+                  battery.isOnBattery, battery.percent <= batteryFloor {
+            stop()
+            lowBatteryStop = LowBatteryStop(percent: battery.percent, date: now)
+        }
     }
 
     private func applyBlock() {

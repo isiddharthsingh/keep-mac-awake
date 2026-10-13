@@ -16,9 +16,13 @@ private let presets = [
     Preset(title: "Until I stop", duration: nil),
 ]
 
+private let batteryFloors = [10, 20, 30, 50]
+
 /// The panel that drops down from the menu bar icon.
 struct PanelView: View {
     @Bindable var session: KeepAwakeSession
+    /// Desktop Macs have no battery, so they get no battery setting.
+    let hasBattery: Bool
     let onCheckForUpdates: () -> Void
     @State private var customHours = 1
     @State private var customMinutes = 30
@@ -33,13 +37,16 @@ struct PanelView: View {
             sectionLabel("CUSTOM").padding(.top, 14)
             customRow
             Divider().padding(.vertical, 14)
-            HStack {
-                Text("Keep screen on")
-                Spacer()
-                Toggle("Keep screen on", isOn: $session.keepScreenOn)
-                    .toggleStyle(.switch)
-                    .labelsHidden()
-                    .controlSize(.small)
+            VStack(spacing: 10) {
+                HStack {
+                    Text("Keep screen on")
+                    Spacer()
+                    Toggle("Keep screen on", isOn: $session.keepScreenOn)
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                        .controlSize(.small)
+                }
+                if hasBattery { batteryFloorRow }
             }
             Divider().padding(.vertical, 14)
             VStack(spacing: 2) {
@@ -83,7 +90,9 @@ struct PanelView: View {
         } else {
             statusRow(
                 Text("Sleeping normally").font(.system(size: 17, weight: .semibold)),
-                subtitle: "Pick a duration to keep your Mac awake")
+                subtitle: session.lowBatteryStop.map {
+                    "Stopped at \($0.percent)% battery at \($0.date.formatted(date: .omitted, time: .shortened))"
+                } ?? "Pick a duration to keep your Mac awake")
         }
     }
 
@@ -125,6 +134,21 @@ struct PanelView: View {
             .buttonStyle(PanelButtonStyle(kind: .accent))
             .disabled(isEmpty)
             .opacity(isEmpty ? 0.4 : 1)
+        }
+    }
+
+    private var batteryFloorRow: some View {
+        HStack {
+            Text("Stop at low battery")
+            Spacer()
+            Picker("Stop at low battery", selection: $session.batteryFloor) {
+                Text("Off").tag(Int?.none)
+                ForEach(batteryFloors, id: \.self) { Text("\($0)%").tag(Int?.some($0)) }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .controlSize(.small)
+            .fixedSize()
         }
     }
 

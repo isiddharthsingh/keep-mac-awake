@@ -16,7 +16,7 @@ final class StatusBarController: NSObject {
     private var isPanelOpen = false
     private var clickMonitor: Any?
 
-    init(session: KeepAwakeSession, pendingSessions: PendingSessionStore) {
+    init(session: KeepAwakeSession, pendingSessions: PendingSessionStore, hasBattery: Bool) {
         self.session = session
         sessionKeeper = UpdateSessionKeeper(session: session, store: pendingSessions)
         updater = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: sessionKeeper, userDriverDelegate: nil)
@@ -29,7 +29,9 @@ final class StatusBarController: NSObject {
         }
         panel.onCancel = { [weak self] in self?.closePanel() }
         panel.setContent(
-            PanelView(session: session, onCheckForUpdates: { [weak self] in self?.checkForUpdates() })
+            PanelView(
+                session: session, hasBattery: hasBattery,
+                onCheckForUpdates: { [weak self] in self?.checkForUpdates() })
                 .fixedSize()
                 .onGeometryChange(for: CGSize.self, of: { $0.size }) { [weak self] size in
                     guard let self else { return }
