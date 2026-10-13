@@ -10,9 +10,18 @@ It is a simple alternative to the `caffeinate` terminal command and to apps like
 
 ## Download
 
-**[Download MacAwake.dmg](https://github.com/isiddharthsingh/keep-mac-awake/releases/latest/download/MacAwake.dmg)** (always the latest version). Open the DMG and drag MacAwake into Applications.
+<p align="center">
+  <a href="https://github.com/isiddharthsingh/keep-mac-awake/releases/latest/download/MacAwake.dmg"><img src="assets/download-button.png" width="316" alt="Download MacAwake for macOS (MacAwake.dmg, latest version)"></a>
+</p>
+<p align="center">
+  <a href="https://github.com/isiddharthsingh/keep-mac-awake/releases/latest"><img src="https://img.shields.io/github/v/release/isiddharthsingh/keep-mac-awake?label=latest&color=0A84FF" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/macOS-26%2B-111111?logo=apple&logoColor=white" alt="Requires macOS 26 or later">
+</p>
 
-MacAwake is not notarized by Apple yet, so the first time you open it macOS says it cannot verify the app. Click **Done**, open **System Settings → Privacy & Security**, click **Open Anyway** next to MacAwake, and confirm. You only need to do this once; updates installed from inside the app skip this step.
+Open the DMG and drag MacAwake into Applications.
+
+> [!NOTE]
+> MacAwake is not notarized by Apple yet, so the first time you open it macOS says it cannot verify the app. Click **Done**, open **System Settings → Privacy & Security**, click **Open Anyway** next to MacAwake, and confirm. You only need to do this once; updates installed from inside the app skip this step.
 
 ## Features
 
