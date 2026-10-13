@@ -19,6 +19,7 @@ private let presets = [
 /// The panel that drops down from the menu bar icon.
 struct PanelView: View {
     @Bindable var session: KeepAwakeSession
+    let onCheckForUpdates: () -> Void
     @State private var customHours = 1
     @State private var customMinutes = 30
 
@@ -41,7 +42,12 @@ struct PanelView: View {
                     .controlSize(.small)
             }
             Divider().padding(.vertical, 14)
-            QuitRow()
+            VStack(spacing: 2) {
+                MenuRow(title: "Check for Updates…", trailing: "v\(AppInfo.version)", action: onCheckForUpdates)
+                MenuRow(title: "Quit \(AppInfo.name)", trailing: "⌘Q", shortcut: "q") {
+                    NSApplication.shared.terminate(nil)
+                }
+            }
         }
         .font(.system(size: 13))
         .padding(14)

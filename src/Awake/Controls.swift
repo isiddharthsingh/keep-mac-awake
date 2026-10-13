@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 struct PanelButtonStyle: ButtonStyle {
@@ -83,17 +82,20 @@ struct StatusChip: View {
     }
 }
 
-struct QuitRow: View {
+/// Full-width, menu-style row with a hover highlight, e.g. "Quit MacAwake   ⌘Q".
+struct MenuRow: View {
+    let title: String
+    let trailing: String
+    var shortcut: KeyEquivalent?
+    let action: () -> Void
     @State private var hovering = false
 
     var body: some View {
-        Button {
-            NSApplication.shared.terminate(nil)
-        } label: {
+        Button(action: action) {
             HStack {
-                Text("Quit \(AppInfo.name)")
+                Text(title)
                 Spacer()
-                Text("⌘Q").foregroundStyle(.secondary)
+                Text(trailing).foregroundStyle(.secondary)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
@@ -101,7 +103,7 @@ struct QuitRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .keyboardShortcut("q")
+        .keyboardShortcut(shortcut.map { KeyboardShortcut($0) })
         .padding(.horizontal, -8)
         .onHover { hovering = $0 }
     }

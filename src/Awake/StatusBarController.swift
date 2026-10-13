@@ -1,5 +1,6 @@
 import AppKit
 import AwakeCore
+import Sparkle
 import SwiftUI
 
 /// Owns the menu bar icon and the glass panel that drops down from it.
@@ -8,6 +9,8 @@ final class StatusBarController: NSObject {
     private let session: KeepAwakeSession
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let panel = GlassPanel(cornerRadius: 18)
+    /// Checks the appcast daily (SUFeedURL in Info.plist) and on "Check for Updates…".
+    private let updater = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
     private var panelSize = CGSize.zero
     private var clickMonitor: Any?
 
@@ -22,7 +25,7 @@ final class StatusBarController: NSObject {
         }
         panel.onCancel = { [weak self] in self?.closePanel() }
         panel.setContent(
-            PanelView(session: session)
+            PanelView(session: session, onCheckForUpdates: { [weak self] in self?.checkForUpdates() })
                 .fixedSize()
                 .onGeometryChange(for: CGSize.self, of: { $0.size }) { [weak self] size in
                     self?.panelSize = size
@@ -43,6 +46,12 @@ final class StatusBarController: NSObject {
         } onChange: { [weak self] in
             Task { @MainActor in self?.updateButton() }
         }
+    }
+
+    private func checkForUpdates() {
+        closePanel()
+        NSApp.activate()
+        updater.checkForUpdates(nil)
     }
 
     @objc private func togglePanel() {
