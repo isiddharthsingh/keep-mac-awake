@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="400" viewBox="0 0 660 400">
+  <!-- DMG window background (design A). Finder draws the icons and their names on top:
+       MacAwake.app centered at (165, 190), the Applications link at (495, 190), 128 pt icons.
+       Rendered to dmg-background.png (1x) and dmg-background@2x.png (2x). -->
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#131828"/>
+      <stop offset="1" stop-color="#07080d"/>
+    </linearGradient>
+    <radialGradient id="top-glow" cx="330" cy="0" r="330" gradientUnits="userSpaceOnUse" gradientTransform="translate(330 0) scale(1.4 0.73) translate(-330 0)">
+      <stop offset="0" stop-color="#0A84FF" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#0A84FF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bottom-glow" cx="330" cy="400" r="330" gradientUnits="userSpaceOnUse" gradientTransform="translate(330 400) scale(1 0.6) translate(-330 -400)">
+      <stop offset="0" stop-color="#5AD8FF" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#5AD8FF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="app-glow" cx="165" cy="188" r="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0A84FF" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#0A84FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="660" height="400" fill="url(#base)"/>
+  <rect width="660" height="400" fill="url(#top-glow)"/>
+  <rect width="660" height="400" fill="url(#bottom-glow)"/>
+
+  <!-- soft glow behind the app icon -->
+  <circle cx="165" cy="188" r="110" fill="url(#app-glow)"/>
+
+  <!-- "drop it here" box around the Applications icon and its name -->
+  <rect x="405" y="102" width="180" height="190" rx="28" fill="#fff" fill-opacity="0.04"
+        stroke="#fff" stroke-opacity="0.34" stroke-width="2.5" stroke-dasharray="9 8"/>
+
+  <!-- Light name tags under the icons. Finder draws icon names in black on a background picture,
+       even in dark mode, so the names need a light surface to be readable. -->
+  <g fill="#E3EAF7" fill-opacity="0.92">
+    <rect x="113" y="262" width="104" height="23" rx="11.5"/>
+    <rect x="439" y="262" width="112" height="23" rx="11.5"/>
+  </g>
+
+  <!-- dotted arc from the app to Applications, arrowhead aligned with the curve's end -->
+  <path d="M 262 178 Q 327 120 394 178" fill="none" stroke="#fff" stroke-opacity="0.6"
+        stroke-width="4" stroke-linecap="round" stroke-dasharray="0.1 13"/>
+  <path d="M 388.4 163.0 L 394 178 L 378.4 174.6" fill="none" stroke="#fff" stroke-opacity="0.78"
+        stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g font-family="-apple-system, system-ui, 'SF Pro Text', 'Helvetica Neue', sans-serif" text-anchor="middle">
+    <text x="330" y="337" font-size="15" font-weight="600" fill="#fff" fill-opacity="0.82">Drag MacAwake into Applications to install</text>
+    <text x="330" y="358" font-size="12" fill="#fff" fill-opacity="0.5">First launch: allow it in System Settings › Privacy &amp; Security</text>
+  </g>
+</svg>
