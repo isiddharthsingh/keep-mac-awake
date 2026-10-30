@@ -47,4 +47,18 @@ struct BatteryStatusTests {
 
         #expect(status == nil)
     }
+
+    /// AppleSmartBattery reports InstantAmperage in mA (negative while draining) and Voltage in mV.
+    @Test func dischargeWattsFromAmperageAndVoltage() {
+        #expect(BatteryStatus.dischargeWatts(milliamps: -1890, millivolts: 11812) == 1890 * 11812 / 1e6)
+    }
+
+    @Test func extremeAmperageDoesNotOverflow() {
+        #expect(BatteryStatus.dischargeWatts(milliamps: .min, millivolts: 1) != nil)
+    }
+
+    @Test func chargingBatteryHasNoDischargeWatts() {
+        #expect(BatteryStatus.dischargeWatts(milliamps: 1500, millivolts: 12600) == nil)
+        #expect(BatteryStatus.dischargeWatts(milliamps: 0, millivolts: 12600) == nil)
+    }
 }

@@ -48,6 +48,8 @@ public final class KeepAwakeSession {
     public var batteryFloor: Int?
     /// Set when the battery floor or the heat ended the last session; cleared when the next one starts.
     public private(set) var autoStop: AutoStop?
+    /// Last battery reading, refreshed every second while active; nil on Macs without a battery.
+    public private(set) var battery: BatteryStatus?
     /// Keeps the Mac awake with the lid closed; nil leaves the lid to macOS.
     public let lid: LidMode?
 
@@ -125,9 +127,10 @@ public final class KeepAwakeSession {
     public func tick() {
         now = clock()
         guard isActive else { return }
+        battery = powerSource.batteryStatus()
         if let endDate, now >= endDate {
             stop()
-        } else if let batteryFloor, let battery = powerSource.batteryStatus(), battery.isOnBattery, battery.percent <= batteryFloor {
+        } else if let batteryFloor, let battery, battery.isOnBattery, battery.percent <= batteryFloor {
             stop()
             autoStop = AutoStop(reason: .lowBattery(percent: battery.percent), date: now)
         } else if thermalState() == .critical {
@@ -142,6 +145,7 @@ public final class KeepAwakeSession {
     private func begin() {
         isActive = true
         autoStop = nil
+        battery = powerSource.batteryStatus()
         lid?.sessionDidStart()
         lid?.update(now: now)
         applyBlock()

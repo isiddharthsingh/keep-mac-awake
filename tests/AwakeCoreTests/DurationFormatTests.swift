@@ -26,4 +26,15 @@ struct DurationFormatTests {
     func countdown(seconds: TimeInterval, expected: String) {
         #expect(DurationFormat.countdown(seconds) == expected)
     }
+
+    @Test(arguments: [
+        (6120.0, "1h 42m"),
+        (6170.0, "1h 42m"),  // whole minutes only
+        (3600.0, "1h"),
+        (2520.0, "42m"),
+        (59.0, "0m"),
+    ])
+    func hoursAndMinutes(seconds: TimeInterval, expected: String) {
+        #expect(DurationFormat.hoursAndMinutes(seconds) == expected)
+    }
 }

@@ -284,6 +284,14 @@ final class KeepAwakeSessionTests {
         #expect(session.autoStop == nil)
     }
 
+    @Test func tickReadsBatteryForStatusLine() {
+        session.start(for: nil)
+        power.status = BatteryStatus(percent: 78, isOnBattery: true, watts: 22)
+        session.tick()
+
+        #expect(session.battery == BatteryStatus(percent: 78, isOnBattery: true, watts: 22))
+    }
+
     @Test func lidModeKeepsLidAwakeFromSessionStart() {
         session.lid?.isEnabled = true
         session.start(for: 600)

@@ -24,6 +24,7 @@ struct PanelView: View {
     let loginItem: LoginItem
     /// Desktop Macs have no battery, so they get no battery setting.
     let hasBattery: Bool
+    let wifi: WiFiStatus
     let onCheckForUpdates: () -> Void
     @AppStorage("customHours") private var customHours = 1
     @AppStorage("customMinutes") private var customMinutes = 30
@@ -32,6 +33,7 @@ struct PanelView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             status.padding(.top, 12)
+            if session.isActive { statusDetails.padding(.top, 10) }
             Divider().padding(.vertical, 14)
             sectionLabel("KEEP AWAKE FOR")
             presetGrid
@@ -96,6 +98,40 @@ struct PanelView: View {
         case .lowBattery(let percent): return "Stopped at \(percent)% battery at \(time)"
         case .tooHot: return "Stopped at \(time): the Mac got too hot"
         }
+    }
+
+    /// One quiet line under the countdown: the lid, Wi-Fi, and the battery.
+    private var statusDetails: some View {
+        HStack(spacing: 8) {
+            if let lid = session.lid, lid.hasLid {
+                detail("laptopcomputer", lidText(lid))
+                Spacer(minLength: 0)
+            }
+            // Only Wi-Fi is watched: it may be off, or joined with no internet, while Ethernet still works.
+            detail(wifi.isConnected ? "wifi" : "wifi.slash", wifi.isConnected ? "Connected" : "Wi-Fi offline")
+            if let battery = session.battery {
+                Spacer(minLength: 0)
+                detail(battery.isOnBattery ? "bolt.fill" : "powerplug.fill",
+                       battery.watts.map { "\(battery.percent)% · \(Int($0.rounded())) W" } ?? "\(battery.percent)%")
+            }
+        }
+        .font(.system(size: 11.5))
+        .foregroundStyle(.secondary)
+    }
+
+    /// After the lid has been closed for a while, how long it stayed awake that way; otherwise the lid's state.
+    private func lidText(_ lid: LidMode) -> String {
+        if lid.closedTime >= 60 { return "Closed \(DurationFormat.hoursAndMinutes(lid.closedTime))" }
+        return lid.isClosed == true ? "Lid closed" : "Lid open"
+    }
+
+    private func detail(_ symbol: String, _ text: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: symbol).imageScale(.small)
+            Text(text)
+        }
+        .lineLimit(1)
+        .fixedSize()
     }
 
     private func statusRow(_ title: Text, subtitle: String) -> some View {

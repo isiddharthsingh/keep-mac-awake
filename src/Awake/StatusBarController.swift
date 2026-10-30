@@ -18,7 +18,10 @@ final class StatusBarController: NSObject {
     private var isPanelOpen = false
     private var clickMonitor: Any?
 
-    init(session: KeepAwakeSession, pendingSessions: PendingSessionStore, preferences: Preferences, hasBattery: Bool) {
+    init(
+        session: KeepAwakeSession, pendingSessions: PendingSessionStore, preferences: Preferences, hasBattery: Bool,
+        wifi: WiFiStatus
+    ) {
         self.session = session
         self.preferences = preferences
         sessionKeeper = UpdateSessionKeeper(session: session, store: pendingSessions)
@@ -33,7 +36,7 @@ final class StatusBarController: NSObject {
         panel.onCancel = { [weak self] in self?.closePanel() }
         panel.setContent(
             PanelView(
-                session: session, loginItem: loginItem, hasBattery: hasBattery,
+                session: session, loginItem: loginItem, hasBattery: hasBattery, wifi: wifi,
                 onCheckForUpdates: { [weak self] in self?.checkForUpdates() })
                 .fixedSize()
                 .onGeometryChange(for: CGSize.self, of: { $0.size }) { [weak self] size in

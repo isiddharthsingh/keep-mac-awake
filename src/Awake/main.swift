@@ -26,7 +26,7 @@ if let saved = pendingSessions.take() { session.restore(saved) }
 let reminders = ReminderScheduler(session: session)
 let statusBar = StatusBarController(
     session: session, pendingSessions: pendingSessions, preferences: preferences,
-    hasBattery: powerSource.batteryStatus() != nil)
+    hasBattery: powerSource.batteryStatus() != nil, wifi: WiFiStatus())
 // Power assertions end with the process, but lid sleep and paused apps don't, so quitting ends the session first.
 NotificationCenter.default.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: .main) { _ in
     MainActor.assumeIsolated {

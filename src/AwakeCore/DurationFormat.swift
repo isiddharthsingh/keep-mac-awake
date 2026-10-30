@@ -15,4 +15,12 @@ public enum DurationFormat {
             ? String(format: "%d:%02d:%02d", hours, minutes, secs)
             : String(format: "%d:%02d", minutes, secs)
     }
+
+    /// Whole hours and minutes for the status line: "1h 42m", "1h", or "42m".
+    public static func hoursAndMinutes(_ seconds: TimeInterval) -> String {
+        let minutes = Int(seconds / 60)
+        let hours = minutes / 60
+        if hours == 0 { return "\(minutes)m" }
+        return minutes % 60 == 0 ? "\(hours)h" : "\(hours)h \(minutes % 60)m"
+    }
 }
