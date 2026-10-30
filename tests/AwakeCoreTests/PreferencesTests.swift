@@ -51,4 +51,26 @@ struct PreferencesTests {
 
         #expect(Preferences(defaults: defaults).batteryFloor == nil)
     }
+
+    @Test func lidModeStartsOffWithDefaultActions() {
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let preferences = Preferences(defaults: defaults)
+
+        #expect(!preferences.stayAwakeWithLidClosed)
+        #expect(preferences.lidCloseOptions == LidCloseOptions(
+            turnOffScreen: true, muteSound: true, pauseChatApps: true, pauseIdleDocker: false))
+    }
+
+    @Test func lidSettingsSurviveRelaunch() {
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let options = LidCloseOptions(turnOffScreen: false, muteSound: true, pauseChatApps: false, pauseIdleDocker: true)
+
+        Preferences(defaults: defaults).stayAwakeWithLidClosed = true
+        Preferences(defaults: defaults).lidCloseOptions = options
+
+        #expect(Preferences(defaults: defaults).stayAwakeWithLidClosed)
+        #expect(Preferences(defaults: defaults).lidCloseOptions == options)
+    }
 }

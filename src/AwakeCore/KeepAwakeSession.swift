@@ -48,6 +48,8 @@ public final class KeepAwakeSession {
     public var batteryFloor: Int?
     /// Set when the battery floor or the heat ended the last session; cleared when the next one starts.
     public private(set) var autoStop: AutoStop?
+    /// Keeps the Mac awake with the lid closed; nil leaves the lid to macOS.
+    public let lid: LidMode?
 
     public var endDate: Date? {
         guard isActive, let startDate, let duration else { return nil }
@@ -70,12 +72,13 @@ public final class KeepAwakeSession {
     @ObservationIgnored private var timer: Timer?
 
     public init(
-        blocker: SleepBlocker, powerSource: PowerSource,
+        blocker: SleepBlocker, powerSource: PowerSource, lid: LidMode? = nil,
         thermalState: @escaping () -> ProcessInfo.ThermalState = { ProcessInfo.processInfo.thermalState },
         clock: @escaping () -> Date = Date.init
     ) {
         self.blocker = blocker
         self.powerSource = powerSource
+        self.lid = lid
         self.thermalState = thermalState
         self.clock = clock
         now = clock()
@@ -85,10 +88,7 @@ public final class KeepAwakeSession {
         now = clock()
         startDate = now
         self.duration = duration
-        isActive = true
-        autoStop = nil
-        applyBlock()
-        startTimer()
+        begin()
     }
 
     /// The running session, ready to save across a relaunch; nil when idle.
@@ -106,10 +106,7 @@ public final class KeepAwakeSession {
         keepScreenOn = snapshot.keepScreenOn
         startDate = snapshot.startDate
         duration = snapshot.duration
-        isActive = true
-        autoStop = nil
-        applyBlock()
-        startTimer()
+        begin()
         return true
     }
 
@@ -119,6 +116,7 @@ public final class KeepAwakeSession {
         duration = nil
         timer?.invalidate()
         timer = nil
+        lid?.sessionDidStop()
         applyBlock()
     }
 
@@ -135,11 +133,25 @@ public final class KeepAwakeSession {
         } else if thermalState() == .critical {
             stop()
             autoStop = AutoStop(reason: .tooHot, date: now)
+        } else {
+            lid?.update(now: now)
+            applyBlock()
         }
     }
 
+    private func begin() {
+        isActive = true
+        autoStop = nil
+        lid?.sessionDidStart()
+        lid?.update(now: now)
+        applyBlock()
+        startTimer()
+    }
+
     private func applyBlock() {
-        blocker.apply(isActive ? (keepScreenOn ? .systemAndDisplay : .system) : .off)
+        // A closed lid covers the built-in screen, so keeping it on would only waste power.
+        let screenOn = keepScreenOn && lid?.isActingOnClosedLid != true
+        blocker.apply(isActive ? (screenOn ? .systemAndDisplay : .system) : .off)
     }
 
     private func startTimer() {

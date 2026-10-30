@@ -67,6 +67,10 @@ final class StatusBarController: NSObject {
         withObservationTracking {
             preferences.keepScreenOn = session.keepScreenOn
             preferences.batteryFloor = session.batteryFloor
+            if let lid = session.lid {
+                preferences.stayAwakeWithLidClosed = lid.isEnabled
+                preferences.lidCloseOptions = lid.options
+            }
         } onChange: { [weak self] in
             Task { @MainActor in self?.savePreferences() }
         }

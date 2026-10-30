@@ -27,18 +27,23 @@ final class TestThermometer {
 }
 
 @MainActor
-struct KeepAwakeSessionTests {
+final class KeepAwakeSessionTests {
     let blocker = RecordingBlocker()
     let clock = TestClock()
     let power = FakePowerSource()
     let thermometer = TestThermometer()
+    let lidSystem = FakeLidSystem()
+    let journal = temporaryJournal()
     let session: KeepAwakeSession
 
     init() {
         let clock = clock, thermometer = thermometer
         session = KeepAwakeSession(
-            blocker: blocker, powerSource: power, thermalState: { thermometer.state }, clock: { clock.now })
+            blocker: blocker, powerSource: power, lid: LidMode(system: lidSystem, journal: journal),
+            thermalState: { thermometer.state }, clock: { clock.now })
     }
+
+    deinit { journal.removeFolder() }
 
     @Test func timedSessionBlocksSleepAndDisplayUntilEndDate() {
         session.start(for: 7200)
@@ -277,5 +282,55 @@ struct KeepAwakeSessionTests {
 
         #expect(session.isActive)
         #expect(session.autoStop == nil)
+    }
+
+    @Test func lidModeKeepsLidAwakeFromSessionStart() {
+        session.lid?.isEnabled = true
+        session.start(for: 600)
+
+        #expect(lidSystem.lidSleepDisabledCalls == [true])
+    }
+
+    @Test func endingSessionAllowsLidSleep() {
+        session.lid?.isEnabled = true
+        session.start(for: 600)
+        clock.advance(600)
+        session.tick()
+
+        #expect(lidSystem.lidSleepDisabledCalls.last == false)
+    }
+
+    @Test func restoredSessionKeepsLidAwake() {
+        session.lid?.isEnabled = true
+        session.restore(SessionSnapshot(startDate: clock.now, duration: 600, keepScreenOn: true))
+
+        #expect(lidSystem.lidSleepDisabledCalls == [true])
+    }
+
+    @Test func closedLidLetsScreenSleepUntilItOpens() {
+        session.lid?.isEnabled = true
+        session.start(for: nil)
+
+        lidSystem.lidClosed = true
+        clock.advance(1)
+        session.tick()
+        #expect(blocker.current == .system)
+
+        lidSystem.lidClosed = false
+        clock.advance(1)
+        session.tick()
+        #expect(blocker.current == .systemAndDisplay)
+    }
+
+    @Test func closedLidWithExternalDisplayKeepsScreenOn() {
+        lidSystem.externalDisplay = true
+        session.lid?.isEnabled = true
+        session.start(for: nil)
+
+        lidSystem.lidClosed = true
+        clock.advance(1)
+        session.tick()
+
+        #expect(blocker.current == .systemAndDisplay)
     }
 }

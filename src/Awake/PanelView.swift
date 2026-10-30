@@ -41,6 +41,7 @@ struct PanelView: View {
             VStack(spacing: 10) {
                 switchRow("Keep screen on", isOn: $session.keepScreenOn)
                 if hasBattery { batteryFloorRow }
+                if let lid = session.lid, lid.hasLid { lidSettings(lid) }
                 switchRow("Open at login", isOn: Binding(get: { loginItem.isEnabled }, set: { loginItem.setEnabled($0) }))
             }
             Divider().padding(.vertical, 14)
@@ -147,6 +148,36 @@ struct PanelView: View {
                 .labelsHidden()
                 .controlSize(.small)
         }
+    }
+
+    @ViewBuilder private func lidSettings(_ lid: LidMode) -> some View {
+        let lid = Bindable(lid)
+        switchRow("Stay awake with lid closed", isOn: lid.isEnabled)
+        if lid.wrappedValue.isEnabled {
+            Text("Use it on a desk, never in a bag.")
+                .font(.system(size: 11.5))
+                .foregroundStyle(.orange)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, -6)
+            VStack(alignment: .leading, spacing: 7) {
+                Text("WHEN THE LID CLOSES")
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                checkbox("Turn off the screen", isOn: lid.options.turnOffScreen)
+                checkbox("Mute sound", isOn: lid.options.muteSound)
+                checkbox("Pause Slack, WhatsApp, Discord", isOn: lid.options.pauseChatApps)
+                checkbox("Pause Docker when no container runs", isOn: lid.options.pauseIdleDocker)
+            }
+            .padding(.leading, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .leading) { Rectangle().fill(Color.primary.opacity(0.1)).frame(width: 2) }
+        }
+    }
+
+    private func checkbox(_ title: String, isOn: Binding<Bool>) -> some View {
+        Toggle(title, isOn: isOn)
+            .toggleStyle(.checkbox)
+            .font(.system(size: 12.5))
     }
 
     private var batteryFloorRow: some View {
