@@ -4,7 +4,7 @@
 
 **MacAwake is a free, open-source macOS menu bar app that keeps your Mac awake for as long as you choose: 15 minutes, a few hours, a custom time, or until you stop it.** When the timer ends, your Mac goes back to its normal sleep settings on its own.
 
-It is a simple alternative to the `caffeinate` terminal command and to apps like Amphetamine, KeepingYouAwake, and Caffeine. Use it to keep a MacBook awake during long downloads, builds, presentations, or while Claude Code and other AI coding agents work overnight.
+It is a simple alternative to the `caffeinate` terminal command and to apps like Amphetamine, KeepingYouAwake, and Caffeine. Use it to keep a MacBook awake during long downloads, builds, presentations, or while Claude Code and other AI coding agents work overnight, even with the lid closed.
 
 <p align="center"><img src="assets/screenshot.png" width="800" alt="MacAwake menu bar app on macOS: the panel keeping a Mac awake with 1:42:57 left and the countdown in the menu bar (left), and the idle panel with timer presets (right)"></p>
 
@@ -31,7 +31,12 @@ Open the DMG and drag MacAwake into Applications.
 - **Custom duration:** set hours (0–23) and minutes (5-minute steps), then press Start.
 - **Live countdown in the menu bar:** an empty mug means your Mac sleeps normally; a steaming cup shows the time left (for example `1:42`).
 - **Keep screen on, or let it turn off:** with the switch off, the display can sleep while the Mac, network, and apps keep running.
-- **Ends on its own:** sleep is allowed again the moment the timer runs out, or if the app quits or crashes.
+- **Stay awake with the lid closed:** keep a MacBook running with the lid shut, with no password, `sudo`, or helper to install. While the lid is closed, MacAwake can mute the sound and pause Slack, WhatsApp, and Discord (and Docker Desktop when no container runs), and it puts them back when you open it.
+- **Safety stops:** ends the session at a battery level you choose (10, 20, 30, or 50%), and always when the Mac gets critically hot.
+- **5-minute reminder:** a notification tells you when a timed session is about to end.
+- **Status at a glance:** during a session the panel shows the lid, Wi-Fi, and the battery's draw in watts, plus how long the lid has stayed closed.
+- **Ends on its own:** sleep is allowed again the moment the timer runs out or the app quits. If it crashes, macOS releases its sleep assertions, and a small watchdog turns lid sleep back on and resumes paused apps.
+- **Open at login:** one switch in the panel.
 - **Built-in updates:** checks for new versions daily, or click **Check for Updates…** in the panel.
 - **No Dock icon, no account, no tracking.** Native Swift and SwiftUI with a Liquid Glass panel, light and dark mode.
 
@@ -55,7 +60,8 @@ To keep it, move `build/MacAwake.app` into your Applications folder.
 
 1. Click the mug icon in the menu bar.
 2. Pick a preset, or set hours and minutes under **Custom** and press **Start**.
-3. Click **Stop** to end early. Click the icon again, press Esc, or click anywhere else to close the panel.
+3. To keep working with the lid closed, turn on **Stay awake with lid closed** and choose what happens when the lid closes. Use it on a desk, never in a bag.
+4. Click **Stop** to end early. Click the icon again, press Esc, or click anywhere else to close the panel.
 
 ## FAQ
 
@@ -65,7 +71,7 @@ Open MacAwake from the menu bar and pick how long. Your Mac will not go to sleep
 
 ### How do I keep my Mac awake while Claude Code or other AI agents run?
 
-Choose **Until I stop** (or a long duration), turn **Keep screen on** off so the display can rest, keep the Mac plugged in, and leave the lid open. Agents keep working while the screen is off or locked. macOS decides you are idle from keyboard and mouse activity, so an agent working in a terminal does not keep the Mac awake by itself.
+Choose **Until I stop** (or a long duration), turn **Keep screen on** off so the display can rest, and keep the Mac plugged in. Leave the lid open, or turn on **Stay awake with lid closed** to close it. Agents keep working while the screen is off or locked. macOS decides you are idle from keyboard and mouse activity, so an agent working in a terminal does not keep the Mac awake by itself.
 
 ### Will downloads and network connections keep running when the screen is off?
 
@@ -73,11 +79,15 @@ Yes. With **Keep screen on** turned off, only the display sleeps. Wi-Fi stays co
 
 ### Does MacAwake keep my Mac awake with the lid closed?
 
-No. Closing a MacBook lid puts it to sleep unless it is plugged into power with an external display (clamshell mode). To stay awake with the lid closed you can run `sudo pmset -a disablesleep 1`, and `sudo pmset -a disablesleep 0` to undo it. Use it with care: a closed MacBook in a bag can overheat.
+Yes. Turn on **Stay awake with lid closed** in the panel, and while a session runs, closing the lid no longer puts the Mac to sleep. It works on battery and on power, with no password, `sudo`, or helper to install. When the session ends, lid sleep comes back, and a Mac whose lid is still closed goes to sleep right away.
+
+While the lid is closed, MacAwake can also mute the sound and pause Slack, WhatsApp, and Discord (and Docker Desktop when no container runs), and it puts them back when you open the lid. The built-in screen turns off after your usual display-sleep time, unless another app keeps it on. With an external display connected, a closed lid is normal clamshell mode, and MacAwake leaves the sound and apps alone.
+
+Use it on a desk, never in a bag: a closed MacBook that stays awake can overheat. MacAwake ends the session if the Mac gets critically hot.
 
 ### Does it work on battery?
 
-Yes. Unlike `caffeinate -s`, which only works on AC power, MacAwake keeps the Mac awake on battery too. macOS will still force sleep when the battery is nearly empty.
+Yes. Unlike `caffeinate -s`, which only works on AC power, MacAwake keeps the Mac awake on battery too. To save some charge, set **Stop at low battery** to end the session at 10, 20, 30, or 50%. macOS will still force sleep when the battery is nearly empty.
 
 ### What is the difference between MacAwake and the caffeinate command?
 
@@ -85,7 +95,7 @@ They use the same macOS mechanism: IOKit power assertions. **Keep screen on** ma
 
 ### Is MacAwake an alternative to Amphetamine, KeepingYouAwake, or Caffeine?
 
-Yes, for the most common case: keeping your Mac awake for a set time from the menu bar. Amphetamine offers more triggers (apps, downloads, schedules) and lid-closed sessions; MacAwake stays small, native, and open source.
+Yes, for the most common case: keeping your Mac awake for a set time from the menu bar. Amphetamine offers more triggers (apps, downloads, schedules); MacAwake stays small, native, and open source, and it also keeps the Mac awake with the lid closed.
 
 ### How do I update MacAwake?
 
@@ -93,7 +103,7 @@ MacAwake updates itself. It checks for a new release once a day and asks before 
 
 ### What happens if MacAwake quits or crashes?
 
-macOS releases its sleep assertions automatically, so your Mac returns to normal sleep. It can never get stuck awake.
+macOS releases its sleep assertions automatically, so your Mac returns to normal sleep. Lid sleep is a system setting rather than an assertion, so while **Stay awake with lid closed** is on, a small watchdog process waits for MacAwake to exit. It then turns lid sleep back on, unmutes the sound, and resumes any paused apps. If both are stopped at once, open MacAwake again and it puts everything back at launch.
 
 ### How can I check that it is working?
 
@@ -107,7 +117,9 @@ You will see `MacAwake is keeping the Mac awake` for each active assertion.
 
 ## How it works
 
-MacAwake creates a `PreventUserIdleSystemSleep` power assertion while a session runs, plus `PreventUserIdleDisplaySleep` when **Keep screen on** is enabled. The countdown follows the wall clock, so it stays correct if the Mac sleeps anyway (for example when the lid is closed) and ends the session as soon as the time is up.
+MacAwake creates a `PreventUserIdleSystemSleep` power assertion while a session runs, plus `PreventUserIdleDisplaySleep` when **Keep screen on** is enabled. The countdown follows the wall clock, so it stays correct if the Mac sleeps anyway and ends the session as soon as the time is up.
+
+**Stay awake with lid closed** uses a different switch: the power manager's clamshell sleep setting (`kPMSetClamshellSleepState` on `IOPMrootDomain`), which an app can change without root. macOS resets it when the charger, a display, or a wake changes things, so MacAwake sets it again every second during a session. Before each change it records what it did in `~/Library/Application Support/MacAwake/lid-journal.json`, so the watchdog or the next launch can undo it.
 
 ## Development
 
@@ -116,9 +128,9 @@ swift test               # run the test suite
 ./scripts/build-app.sh   # build build/MacAwake.app
 ```
 
-- `src/AwakeCore`: session logic, duration formatting, and the IOKit power assertion wrapper
-- `src/Awake`: the menu bar icon and the glass dropdown panel
-- `tests/AwakeCoreTests`: tests, including one that checks the real assertions macOS reports
+- `src/AwakeCore`: session logic, lid mode and its watchdog, duration formatting, and the wrappers for power assertions, lid sleep, the battery, sound, and pausing apps
+- `src/Awake`: the menu bar icon, the glass dropdown panel, and the reminder notification
+- `tests/AwakeCoreTests`: tests, including ones that check the real assertions macOS reports and pause a real process
 
 ### Releasing
 
