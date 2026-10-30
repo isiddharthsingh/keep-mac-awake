@@ -22,15 +22,22 @@ final class FakePowerSource: PowerSource {
 }
 
 @MainActor
+final class TestThermometer {
+    var state = ProcessInfo.ThermalState.nominal
+}
+
+@MainActor
 struct KeepAwakeSessionTests {
     let blocker = RecordingBlocker()
     let clock = TestClock()
     let power = FakePowerSource()
+    let thermometer = TestThermometer()
     let session: KeepAwakeSession
 
     init() {
-        let clock = clock
-        session = KeepAwakeSession(blocker: blocker, powerSource: power, clock: { clock.now })
+        let clock = clock, thermometer = thermometer
+        session = KeepAwakeSession(
+            blocker: blocker, powerSource: power, thermalState: { thermometer.state }, clock: { clock.now })
     }
 
     @Test func timedSessionBlocksSleepAndDisplayUntilEndDate() {
@@ -186,7 +193,7 @@ struct KeepAwakeSessionTests {
 
         #expect(!session.isActive)
         #expect(blocker.current == .off)
-        #expect(session.lowBatteryStop == LowBatteryStop(percent: 20, date: clock.now))
+        #expect(session.autoStop == AutoStop(reason: .lowBattery(percent: 20), date: clock.now))
     }
 
     @Test func pluggedInSessionIgnoresBatteryFloor() {
@@ -206,7 +213,7 @@ struct KeepAwakeSessionTests {
         session.tick()
 
         #expect(session.isActive)
-        #expect(session.lowBatteryStop == nil)
+        #expect(session.autoStop == nil)
     }
 
     @Test func macWithoutBatteryIgnoresBatteryFloor() {
@@ -219,7 +226,7 @@ struct KeepAwakeSessionTests {
         #expect(session.isActive)
     }
 
-    @Test func startingAgainForgetsLowBatteryStop() {
+    @Test func startingAgainForgetsAutoStop() {
         session.batteryFloor = 20
         session.start(for: nil)
         power.status = BatteryStatus(percent: 20, isOnBattery: true)
@@ -228,10 +235,10 @@ struct KeepAwakeSessionTests {
         power.status = BatteryStatus(percent: 20, isOnBattery: false)
         session.start(for: 600)
 
-        #expect(session.lowBatteryStop == nil)
+        #expect(session.autoStop == nil)
     }
 
-    @Test func restoringForgetsLowBatteryStop() {
+    @Test func restoringForgetsAutoStop() {
         session.batteryFloor = 20
         session.start(for: nil)
         power.status = BatteryStatus(percent: 20, isOnBattery: true)
@@ -240,7 +247,7 @@ struct KeepAwakeSessionTests {
         power.status = BatteryStatus(percent: 20, isOnBattery: false)
         session.restore(SessionSnapshot(startDate: clock.now, duration: 600, keepScreenOn: true))
 
-        #expect(session.lowBatteryStop == nil)
+        #expect(session.autoStop == nil)
     }
 
     @Test func idleTickNeverReportsLowBattery() {
@@ -249,6 +256,26 @@ struct KeepAwakeSessionTests {
 
         session.tick()
 
-        #expect(session.lowBatteryStop == nil)
+        #expect(session.autoStop == nil)
+    }
+
+    @Test func sessionEndsWhenMacGetsCriticallyHot() {
+        session.start(for: nil)
+        clock.advance(60)
+        thermometer.state = .critical
+        session.tick()
+
+        #expect(!session.isActive)
+        #expect(blocker.current == .off)
+        #expect(session.autoStop == AutoStop(reason: .tooHot, date: clock.now))
+    }
+
+    @Test func seriousHeatKeepsSessionRunning() {
+        session.start(for: nil)
+        thermometer.state = .serious
+        session.tick()
+
+        #expect(session.isActive)
+        #expect(session.autoStop == nil)
     }
 }

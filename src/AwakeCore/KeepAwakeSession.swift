@@ -15,10 +15,20 @@ public struct SessionSnapshot: Codable, Equatable, Sendable {
     }
 }
 
-/// A session the battery floor ended, kept so the panel can say why the Mac is allowed to sleep again.
-public struct LowBatteryStop: Equatable, Sendable {
-    public var percent: Int
+/// A session that ended on its own before its time was up, kept so the panel can say why the Mac is allowed to sleep again.
+public struct AutoStop: Equatable, Sendable {
+    public enum Reason: Equatable, Sendable {
+        case lowBattery(percent: Int)
+        case tooHot
+    }
+
+    public var reason: Reason
     public var date: Date
+
+    public init(reason: Reason, date: Date) {
+        self.reason = reason
+        self.date = date
+    }
 }
 
 /// One "keep the Mac awake" session: for a fixed duration, or until stopped.
@@ -36,8 +46,8 @@ public final class KeepAwakeSession {
     }
     /// Battery charge, in percent, at which the session ends while on battery; nil means never.
     public var batteryFloor: Int?
-    /// Set when the battery floor ended the last session; cleared when the next one starts.
-    public private(set) var lowBatteryStop: LowBatteryStop?
+    /// Set when the battery floor or the heat ended the last session; cleared when the next one starts.
+    public private(set) var autoStop: AutoStop?
 
     public var endDate: Date? {
         guard isActive, let startDate, let duration else { return nil }
@@ -55,12 +65,18 @@ public final class KeepAwakeSession {
 
     @ObservationIgnored private let blocker: SleepBlocker
     @ObservationIgnored private let powerSource: PowerSource
+    @ObservationIgnored private let thermalState: () -> ProcessInfo.ThermalState
     @ObservationIgnored private let clock: () -> Date
     @ObservationIgnored private var timer: Timer?
 
-    public init(blocker: SleepBlocker, powerSource: PowerSource, clock: @escaping () -> Date = Date.init) {
+    public init(
+        blocker: SleepBlocker, powerSource: PowerSource,
+        thermalState: @escaping () -> ProcessInfo.ThermalState = { ProcessInfo.processInfo.thermalState },
+        clock: @escaping () -> Date = Date.init
+    ) {
         self.blocker = blocker
         self.powerSource = powerSource
+        self.thermalState = thermalState
         self.clock = clock
         now = clock()
     }
@@ -70,7 +86,7 @@ public final class KeepAwakeSession {
         startDate = now
         self.duration = duration
         isActive = true
-        lowBatteryStop = nil
+        autoStop = nil
         applyBlock()
         startTimer()
     }
@@ -91,7 +107,7 @@ public final class KeepAwakeSession {
         startDate = snapshot.startDate
         duration = snapshot.duration
         isActive = true
-        lowBatteryStop = nil
+        autoStop = nil
         applyBlock()
         startTimer()
         return true
@@ -106,16 +122,19 @@ public final class KeepAwakeSession {
         applyBlock()
     }
 
-    /// Advances the countdown; ends the session once its time is up or the battery reaches the floor.
-    /// Uses wall-clock time, so it stays correct after the Mac wakes from a lid-close sleep.
+    /// Advances the countdown; ends the session once its time is up, the battery reaches the floor,
+    /// or the Mac gets critically hot. Uses wall-clock time, so it stays correct after the Mac wakes from sleep.
     public func tick() {
         now = clock()
+        guard isActive else { return }
         if let endDate, now >= endDate {
             stop()
-        } else if isActive, let batteryFloor, let battery = powerSource.batteryStatus(),
-                  battery.isOnBattery, battery.percent <= batteryFloor {
+        } else if let batteryFloor, let battery = powerSource.batteryStatus(), battery.isOnBattery, battery.percent <= batteryFloor {
             stop()
-            lowBatteryStop = LowBatteryStop(percent: battery.percent, date: now)
+            autoStop = AutoStop(reason: .lowBattery(percent: battery.percent), date: now)
+        } else if thermalState() == .critical {
+            stop()
+            autoStop = AutoStop(reason: .tooHot, date: now)
         }
     }
 

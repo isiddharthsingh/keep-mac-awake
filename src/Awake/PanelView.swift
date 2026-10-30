@@ -85,9 +85,15 @@ struct PanelView: View {
         } else {
             statusRow(
                 Text("Sleeping normally").font(.system(size: 17, weight: .semibold)),
-                subtitle: session.lowBatteryStop.map {
-                    "Stopped at \($0.percent)% battery at \($0.date.formatted(date: .omitted, time: .shortened))"
-                } ?? "Pick a duration to keep your Mac awake")
+                subtitle: session.autoStop.map(Self.stopMessage) ?? "Pick a duration to keep your Mac awake")
+        }
+    }
+
+    private static func stopMessage(_ stop: AutoStop) -> String {
+        let time = stop.date.formatted(date: .omitted, time: .shortened)
+        switch stop.reason {
+        case .lowBattery(let percent): return "Stopped at \(percent)% battery at \(time)"
+        case .tooHot: return "Stopped at \(time): the Mac got too hot"
         }
     }
 
