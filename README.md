@@ -8,7 +8,11 @@ It is a simple alternative to the `caffeinate` terminal command and to apps like
 
 <p align="center"><img src="assets/screenshot.png" width="800" alt="MacAwake menu bar app on macOS: the panel keeping a Mac awake with 1:42:57 left and the countdown in the menu bar (left), and the idle panel with timer presets (right)"></p>
 
-https://github.com/user-attachments/assets/bca07e8d-e4f1-445f-b4ce-f92add6b2188
+
+
+https://github.com/user-attachments/assets/0d9afd84-23c8-4772-88d6-77340ffb494c
+
+
 
 ## Download
 
